@@ -5,13 +5,12 @@
 
 #include <iostream>
 
-
 void test0() {
    PrintT{'_'}(1, 2, 3);
    println(" ");
    PrintLnT{'+'}('a', 3.14, "string");
-  TEST_CHECK(true);
-  TEST_CHECK(false);
+   TEST_CHECK(true);
+   TEST_CHECK(false);
 }
 
 int main() {

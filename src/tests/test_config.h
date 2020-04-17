@@ -1,10 +1,12 @@
 #pragma once
 
+#include <initializer_list>
 #include <iostream>
 #include <string>
-#include <initializer_list>
 
-
-#define TEST_CHECK(expr) \
-   if(expr) {println("'"#expr"'", "passed");} \
-   else { println("'"#expr"'", "failed", __FILE__, __LINE__);}
+#define TEST_CHECK(expr)                                                                 \
+   if (expr) {                                                                           \
+      println("'" #expr "'", "passed");                                                  \
+   } else {                                                                              \
+      println("'" #expr "'", "failed", __FILE__, __LINE__);                              \
+   }
