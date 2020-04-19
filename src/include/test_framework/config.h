@@ -2,4 +2,4 @@
 
 #include <common/config.h>
 
-#define DDS_MPL_NAMESPACE mpl
+#define DDS_TINYTEST_NAMESPACE tiny_test

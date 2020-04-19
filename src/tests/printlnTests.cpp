@@ -1,9 +1,8 @@
-#include <string>
-#include <test_framework/tools.h>
-
-#include "test_config.h"
+#include <test_framework/tiny_framework.h>
 
 #include <sstream>
+
+TESTS_BEGIN();
 
 static std::stringstream &StreamObject() {
    static std::stringstream obj;
@@ -33,7 +32,7 @@ using StreamPrintLnT = PrintBaseLnT<StringStreamGetter>;
 constexpr StreamPrintT sprint{};
 constexpr StreamPrintLnT sprintln{};
 
-void testEmptyPrint() {
+TEST_CASE(testEmptyPrint) {
    reset_stream();
    sprint();
    auto str = get_string_and_reset();
@@ -44,7 +43,7 @@ void testEmptyPrint() {
    TEST_CHECK("" == str);
 }
 
-void testDefaultSeparator() {
+TEST_CASE(testDefaultSeparator) {
    reset_stream();
    sprint(5);
    auto str = get_string_and_reset();
@@ -63,7 +62,7 @@ void testDefaultSeparator() {
    TEST_CHECK("one two 3\n" == str);
 }
 
-void testCustomSeparator() {
+TEST_CASE(testCustomSeparator) {
    reset_stream();
    StreamPrintT csprint{'+'};
    StreamPrintLnT csprintln{'+'};
@@ -170,10 +169,4 @@ void testCustomSeparator() {
    TEST_CHECK("1+2+3+4+5+6+7+8+9+10+11+12+13\n" == str);
 }
 
-int main(int argc, char **argv) {
-   testEmptyPrint();
-   testDefaultSeparator();
-   testCustomSeparator();
-
-   // std::cout << "running " << argv[0] << std::endl;
-}
+TESTS_END();

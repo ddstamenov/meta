@@ -15,7 +15,7 @@ COUNT=0
 for TEST in "${TESTS[@]}"
 do
    echo "----------- Running: $TEST ..."
-   ./$TEST
+   ./$TEST $@
    let COUNT++
 done
 

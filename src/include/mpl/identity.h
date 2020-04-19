@@ -2,11 +2,13 @@
 
 #include <mpl/config.h>
 
-MPL_NAMESPACE_START
+
+namespace DDS_ROOT_NAMESPACE {
+namespace DDS_MPL_NAMESPACE {
 
 struct identity_t {
    template <typename T>
-   decltype(auto) operator()(T &&t) {
+   decltype(auto) operator()(T &&t) const {
       return static_cast<T &&>(t);
    }
 };
@@ -15,4 +17,5 @@ constexpr identity_t identity{};
 
 inline void avoid_unused_identity() { (void)identity; }
 
-MPL_NAMESPACE_END
+} // namespace DDS_MPL_NAMESPACE
+} // namespace DDS_ROOT_NAMESPACE
