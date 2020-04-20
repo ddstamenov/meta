@@ -45,4 +45,66 @@ TEST_CASE(sfinae) {
    TEST_CHECK_EQUAL("42", ret2);
 }
 
+struct type1_t {};
+
+int foo(double) {
+   TEST_MESSAGE("void foo(double) is called");
+   return 1;
+}
+
+int foo(String) {
+   TEST_MESSAGE("void foo(String) is called");
+   return 2;
+}
+
+int foo(type1_t) {
+   TEST_MESSAGE("void foo(type1_t) is called");
+   return 3;
+}
+
+template <int val>
+struct complex_t {
+   using type1 = double;
+   using type2 = String;
+
+   static constexpr int value() { return val; }
+};
+
+template <typename T>
+auto func_return_different_types_depend_on_template(T in) {
+   /*
+    * Note: the following implementation is not allowed - have different returned types
+    * if(T::value() >5) {
+    *    return typename decltype(in)::type1{42};
+    * } else {
+    *    return typename decltype(in)::type2{"string-value"};
+    * }
+    */
+   auto tcb = [&]() { return typename decltype(in)::type1{42}; };
+   auto fcb = [&]() { return typename decltype(in)::type2{"string-value"}; };
+   auto cond = bool_t<(T::value() > 5)>{};
+   return if_static(cond, tcb, fcb)();
+};
+
+TEST_CASE(tricky) {
+
+   /*
+    * condition used in execute if complex_t `val` > 5
+    */
+   constexpr complex_t<7> complex1;
+   constexpr complex_t<3> complex2;
+
+   double d = func_return_different_types_depend_on_template(complex1);
+   TEST_CHECK_EQUAL(42, d);
+
+   String s = func_return_different_types_depend_on_template(complex2);
+   TEST_CHECK_EQUAL("string-value", s);
+
+   int i1 = foo(func_return_different_types_depend_on_template(complex1));
+   TEST_CHECK_EQUAL(1, i1);
+
+   int i2 = foo(func_return_different_types_depend_on_template(complex2));
+   TEST_CHECK_EQUAL(2, i2);
+}
+
 TEST_SUITE_END() // ifstaticTests

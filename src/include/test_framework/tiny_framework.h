@@ -50,26 +50,29 @@
 namespace DDS_ROOT_NAMESPACE {
 namespace DDS_TINYTEST_NAMESPACE {
 
-struct config_t;
+struct __config_t;
 
-enum check_return_e { check_ok, check_err };
+// only declaration
+__config_t &__get_config();
 
-using test_report_cb_t = std::function<void(check_return_e)>;
-using test_cb_t = std::function<void(const config_t &, test_report_cb_t)>;
-using test_info_t = std::pair<String /*name*/, test_cb_t>;
-using tests_t = std::list<test_info_t>;
-using list_suites_t = std::list<String>;
+enum __check_return_e { __check_ok, __check_err };
 
-struct static_test_object_t {
-   tests_t tests;
-   list_suites_t suites;
+using __test_report_cb_t = std::function<void(__check_return_e)>;
+using __test_cb_t = std::function<void(const __config_t &, __test_report_cb_t)>;
+using __test_info_t = std::pair<String /*name*/, __test_cb_t>;
+using __tests_t = std::list<__test_info_t>;
+using __list_suites_t = std::list<String>;
+
+struct __static_test_object_t {
+   __tests_t tests;
+   __list_suites_t suites;
    const String test_separator{"/"};
 };
 
 // only declaration
-static_test_object_t &get_sobject();
+__static_test_object_t &__get_sobject();
 
-struct config_t {
+struct __config_t {
    enum Level {
       ERROR,          // print only error
       MESSAGE,        // print TEST_MESSAGE
@@ -109,14 +112,14 @@ struct config_t {
       println(msg);
    }
 
-   int run_tests(const static_test_object_t &obj) const {
+   int run_tests(const __static_test_object_t &obj) const {
       int count_test_cases{};
       unsigned checks{};
       unsigned errors{};
-      auto test_report_cb = [&checks, &errors](check_return_e value) {
+      auto test_report_cb = [&checks, &errors](__check_return_e value) {
          switch (value) {
-         case check_err: ++errors; break;
-         case check_ok: ++checks; break;
+         case __check_err: ++errors; break;
+         case __check_ok: ++checks; break;
          default: DdsVerify(!"Unhandled case");
          }
       };
@@ -150,10 +153,12 @@ struct config_t {
    }
 
    static void print_help(const char *name) {
-      std::cerr << "Usage:\n" << name << "--log_level=[error/message/testnames/all]\n";
+      std::cerr << "Usage:\n"
+                << name << "\n --log_level=[error/message/testnames/all]\n"
+                << " --help (print this help message)\n";
    }
 
-   bool filter(const test_info_t &test) const {
+   bool filter(const __test_info_t &test) const {
       (void)test.first; // TODO: add filtering by name
       return true;
    }
@@ -161,17 +166,17 @@ struct config_t {
    Level level{ERROR};
 };
 
-struct add_remove_suite_t {
-   add_remove_suite_t(static_test_object_t &obj, const String &name) {
+struct __add_remove_suite_t {
+   __add_remove_suite_t(__static_test_object_t &obj, const String &name) {
       obj.suites.emplace_back(name);
    }
-   add_remove_suite_t(static_test_object_t &obj) { obj.suites.pop_back(); }
+   __add_remove_suite_t(__static_test_object_t &obj) { obj.suites.pop_back(); }
 };
 
-struct add_test_t {
+struct __add_test_t {
    template <typename test_info>
-   add_test_t(static_test_object_t &obj, test_info test) {
-      obj.tests.emplace_back(test.test_name, test);
+   __add_test_t(__static_test_object_t &obj, test_info test) {
+      obj.tests.emplace_back(test.__test_name, test);
    }
 };
 
@@ -180,17 +185,24 @@ struct add_test_t {
  * When used is should be the first macro used from test file.
  */
 #define TESTS_BEGIN()                                                                    \
-   ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t                    \
-      & ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject() {                    \
-      static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t sobject; \
+   ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__static_test_object_t                  \
+      & ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject() {                  \
+      static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__static_test_object_t        \
+         sobject;                                                                        \
       return sobject;                                                                    \
    }                                                                                     \
+   ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__config_t                              \
+      & ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_config() {                   \
+      static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__config_t scfg;              \
+      return scfg;                                                                       \
+   }                                                                                     \
    int main(int argc, char **argv) {                                                     \
-      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t cfg{};                      \
-      if (!cfg.parse_args(argc, argv)) {                                                 \
+      auto &__cfg = ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_config();        \
+      if (!__cfg.parse_args(argc, argv)) {                                               \
          return 1;                                                                       \
       }                                                                                  \
-      return cfg.run_tests(::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()); \
+      return __cfg.run_tests(                                                            \
+         ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject());                 \
    }
 
 /*
@@ -200,15 +212,16 @@ struct add_test_t {
  */
 #define TEST_SUITE_BEGIN(name)                                                           \
    namespace name {                                                                      \
-   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_remove_suite_t suite_##name{ \
-      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject(), #name};
+   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__add_remove_suite_t             \
+      __suite_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject(),      \
+                     #name};
 
 /*
  * end of current suite
  */
 #define TEST_SUITE_END()                                                                 \
-   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_remove_suite_t               \
-      suite_end_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()};     \
+   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__add_remove_suite_t             \
+      __suite_end_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject()}; \
    }
 
 /*
@@ -217,28 +230,29 @@ struct add_test_t {
  * TEST_REQUIRE, TEST_CHECK_EQUAL, etc ...
  */
 #define TEST_CASE(name)                                                                  \
-   struct type_case_##name {                                                             \
-      type_case_##name(                                                                  \
-         const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t        \
+   struct __type_case_##name {                                                           \
+      __type_case_##name(                                                                \
+         const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__static_test_object_t      \
             &obj) {                                                                      \
          ::DDS_ROOT_NAMESPACE::String calc;                                              \
          for (const auto &suite : obj.suites) {                                          \
             calc += suite;                                                               \
             calc += obj.test_separator;                                                  \
          }                                                                               \
-         test_name = calc + #name;                                                       \
+         __test_name = calc + #name;                                                     \
       }                                                                                  \
-      void operator()(const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t &,    \
-                      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::test_report_cb_t);   \
-      ::DDS_ROOT_NAMESPACE::String test_name;                                            \
-      std::list<::DDS_ROOT_NAMESPACE::String> list_info;                                 \
+      void operator()(const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__config_t &,  \
+                      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__test_report_cb_t); \
+      ::DDS_ROOT_NAMESPACE::String __test_name;                                          \
+      std::list<::DDS_ROOT_NAMESPACE::String> __list_info;                               \
    };                                                                                    \
-   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_test_t case_##name{          \
-      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject(),                       \
-      type_case_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()}};    \
-   void type_case_##name::operator()(                                                    \
-      const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t &cfg,                 \
-      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::test_report_cb_t test_report_cb)
+   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__add_test_t case_##name{        \
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject(),                     \
+      __type_case_##name{                                                                \
+         ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_sobject()}};                \
+   void __type_case_##name::operator()(                                                  \
+      const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__config_t &__cfg,             \
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__test_report_cb_t __test_report_cb)
 
 /*
  * Internal defined used from this framework
@@ -247,24 +261,24 @@ struct add_test_t {
    if (expr) {                                                                           \
       using namespace ::DDS_ROOT_NAMESPACE;                                              \
       using namespace ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE;                      \
-      test_report_cb(check_ok);                                                          \
-      String log = String{"Ok: '"} + #expr + String{"' passed"};                         \
-      cfg.trace(config_t::ALL, log);                                                     \
-      list_info.clear();                                                                 \
+      __test_report_cb(__check_ok);                                                      \
+      String __log = String{"Ok: '"} + #expr + String{"' passed"};                       \
+      __cfg.trace(__config_t::ALL, __log);                                               \
+      __list_info.clear();                                                               \
    } else {                                                                              \
       using namespace ::DDS_ROOT_NAMESPACE;                                              \
       using namespace ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE;                      \
-      test_report_cb(check_err);                                                         \
+      __test_report_cb(__check_err);                                                     \
       String sExpr = String{"'"} + #expr + String{"'"};                                  \
-      std::stringstream strm;                                                            \
-      strm << "[error] " << (stop_on_error ? "(required check)" : "") << test_name       \
-           << " File: " __FILE__ << ":" << __LINE__ << " " << sExpr << " failed";        \
-      String log = strm.str();                                                           \
-      for (const auto &info : list_info) {                                               \
-         cfg.trace(config_t::ERROR, "   Failed in context:" + info);                     \
+      std::stringstream __strm;                                                          \
+      __strm << "[error] " << (stop_on_error ? "(required check)" : "") << __test_name   \
+             << " File: " __FILE__ << ":" << __LINE__ << " " << sExpr << " failed";      \
+      String __log = __strm.str();                                                       \
+      for (const auto &info : __list_info) {                                             \
+         __cfg.trace(__config_t::ERROR, "   Failed in context:" + info);                 \
       }                                                                                  \
-      list_info.clear();                                                                 \
-      cfg.trace(config_t::ERROR, log);                                                   \
+      __list_info.clear();                                                               \
+      __cfg.trace(__config_t::ERROR, __log);                                             \
       if (stop_on_error) {                                                               \
          return;                                                                         \
       }                                                                                  \
@@ -277,24 +291,24 @@ struct add_test_t {
    if (lhs == rhs) {                                                                     \
       using namespace ::DDS_ROOT_NAMESPACE;                                              \
       using namespace ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE;                      \
-      test_report_cb(check_ok);                                                          \
-      String log = String{"Ok: '"} + #lhs + String{"="} + #rhs + String{"' passed"};     \
-      cfg.trace(config_t::ALL, log);                                                     \
-      list_info.clear();                                                                 \
+      __test_report_cb(__check_ok);                                                      \
+      String __log = String{"Ok: '"} + #lhs + String{"="} + #rhs + String{"' passed"};   \
+      __cfg.trace(__config_t::ALL, __log);                                               \
+      __list_info.clear();                                                               \
    } else {                                                                              \
       using namespace ::DDS_ROOT_NAMESPACE;                                              \
       using namespace ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE;                      \
-      test_report_cb(check_err);                                                         \
-      std::stringstream strm;                                                            \
-      strm << "[error] " << (stop_on_error ? "(required check)" : "") << test_name       \
-           << " File: " __FILE__ << ":" << __LINE__ << " " #lhs "==" #rhs " (failed)"    \
-           << "[`" << lhs << "` != `" << rhs << "`]";                                    \
-      String log = strm.str();                                                           \
-      for (const auto &info : list_info) {                                               \
-         cfg.trace(config_t::ERROR, "   Failed in context:" + info);                     \
+      __test_report_cb(__check_err);                                                     \
+      std::stringstream __strm;                                                          \
+      __strm << "[error] " << (stop_on_error ? "(required check)" : "") << __test_name   \
+             << " File: " __FILE__ << ":" << __LINE__ << " " #lhs "==" #rhs " (failed)"  \
+             << "[`" << lhs << "` != `" << rhs << "`]";                                  \
+      String __log = __strm.str();                                                       \
+      for (const auto &info : __list_info) {                                             \
+         __cfg.trace(__config_t::ERROR, "   Failed in context:" + info);                 \
       }                                                                                  \
-      list_info.clear();                                                                 \
-      cfg.trace(config_t::ERROR, log);                                                   \
+      __list_info.clear();                                                               \
+      __cfg.trace(__config_t::ERROR, __log);                                             \
       if (stop_on_error) {                                                               \
          return;                                                                         \
       }                                                                                  \
@@ -333,13 +347,14 @@ struct add_test_t {
  * this will print `msg` if `value` of log_level=<value> is greater or equal to message
  */
 #define TEST_MESSAGE(msg)                                                                \
-   cfg.trace(::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t::MESSAGE, msg);
+   ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__get_config().trace(                   \
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::__config_t::MESSAGE, msg);
 
 /*
  * passed `msg` will be printed if next check (TEST_CHECK, TEST_CHECK_EQUAL, ...) fails.
  * Every check will reset info.
  */
-#define TEST_INFO(msg) list_info.emplace_back(msg);
+#define TEST_INFO(msg) __list_info.emplace_back(msg);
 
 } // namespace DDS_TINYTEST_NAMESPACE
 } // namespace DDS_ROOT_NAMESPACE
