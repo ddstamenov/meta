@@ -8,7 +8,7 @@
  *
  * #include <test_framework/tiny_framework.h>
  *
- * // begin
+ * // begin tests. It should be used only once per binary.
  * TESTS_BEGIN()
  *
  * // add test suite
@@ -35,8 +35,6 @@
  *
  * TEST_SUITE_END() // end of suite  suite_name1
  *
- * // end of test file
- * TESTS_END()
  *
  */
 
@@ -67,6 +65,9 @@ struct static_test_object_t {
    list_suites_t suites;
    const String test_separator{"/"};
 };
+
+// only declaration
+static_test_object_t &get_sobject();
 
 struct config_t {
    enum Level {
@@ -175,11 +176,22 @@ struct add_test_t {
 };
 
 /*
- * This line should be the first macro used from test file. All other macros depends on
- * it
+ * This line defines a `int main()` function and should be used only once for binary.
+ * When used is should be the first macro used from test file.
  */
 #define TESTS_BEGIN()                                                                    \
-   static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t sobject;
+   ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t                    \
+      & ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject() {                    \
+      static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::static_test_object_t sobject; \
+      return sobject;                                                                    \
+   }                                                                                     \
+   int main(int argc, char **argv) {                                                     \
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t cfg{};                      \
+      if (!cfg.parse_args(argc, argv)) {                                                 \
+         return 1;                                                                       \
+      }                                                                                  \
+      return cfg.run_tests(::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()); \
+   }
 
 /*
  * Begin test suite with given `name`
@@ -189,14 +201,14 @@ struct add_test_t {
 #define TEST_SUITE_BEGIN(name)                                                           \
    namespace name {                                                                      \
    static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_remove_suite_t suite_##name{ \
-      sobject, #name};
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject(), #name};
 
 /*
  * end of current suite
  */
 #define TEST_SUITE_END()                                                                 \
    static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_remove_suite_t               \
-      suite_end_##name{sobject};                                                         \
+      suite_end_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()};     \
    }
 
 /*
@@ -222,7 +234,8 @@ struct add_test_t {
       std::list<::DDS_ROOT_NAMESPACE::String> list_info;                                 \
    };                                                                                    \
    static ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::add_test_t case_##name{          \
-      sobject, type_case_##name{sobject}};                                               \
+      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject(),                       \
+      type_case_##name{::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::get_sobject()}};    \
    void type_case_##name::operator()(                                                    \
       const ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t &cfg,                 \
       ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::test_report_cb_t test_report_cb)
@@ -328,18 +341,6 @@ struct add_test_t {
  * Every check will reset info.
  */
 #define TEST_INFO(msg) list_info.emplace_back(msg);
-
-/*
- * End of tests. It should be called when all test cases are done.
- */
-#define TESTS_END()                                                                      \
-   int main(int argc, char **argv) {                                                     \
-      ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE::config_t cfg{};                      \
-      if (!cfg.parse_args(argc, argv)) {                                                 \
-         return 1;                                                                       \
-      }                                                                                  \
-      return cfg.run_tests(sobject);                                                     \
-   }
 
 } // namespace DDS_TINYTEST_NAMESPACE
 } // namespace DDS_ROOT_NAMESPACE

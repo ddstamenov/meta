@@ -61,4 +61,37 @@ do
    fi
 done
 
+# --------------------------------------------------------------------------------
+# Build single demo test binary using multiple sources
+DEMODIR=demo-test-framework
+cd $DEMODIR
+BUILD_DIR="../build"
+INCLUDE="-I `pwd`/../../include -I `pwd`"
+
+FILES=`ls *.cpp`
+echo "compile file: $FILES"
+
+OUTPUT=multy_cpp_bin
+
+echo "Compile $FILES ($CLANG_CXX) ..."
+CMD="$CLANG_CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $FILES $CLANG_ASAN \
+   -o $BUILD_DIR/${OUTPUT}_clang"
+echo $CMD
+$CMD
+ret=$?
+if [ $ret -ne 0 ]
+then
+   BUILD_OK=$ret
+fi
+
+echo "Compile $FILES ($GCC_CXX) ..."
+CMD="$GCC_CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $FILES -o $BUILD_DIR/${OUTPUT}_gcc"
+echo $CMD
+$CMD
+ret=$?
+if [ $ret -ne 0 ]
+then
+   BUILD_OK=$ret
+fi
+
 exit $BUILD_OK

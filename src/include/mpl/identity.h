@@ -2,7 +2,6 @@
 
 #include <mpl/config.h>
 
-
 namespace DDS_ROOT_NAMESPACE {
 namespace DDS_MPL_NAMESPACE {
 

@@ -96,5 +96,3 @@ TEST_CASE(GetByGenericRef) {
    static_assert(std::is_same<decltype(iptr), const char(&)[10]>::value, "type mismatch");
    TEST_CHECK_EQUAL(0, strcmp(ptr, iptr));
 }
-
-TESTS_END()
