@@ -257,8 +257,8 @@ struct add_test_t {
       test_report_cb(check_err);                                                         \
       String sExpr = String{"'"} + #expr + String{"'"};                                  \
       std::stringstream strm;                                                            \
-      strm << "[error] " << (stop_on_error ? "(required check)" : "")                    \
-           << " File: " __FILE__ << " Line: " << __LINE__ << " " << sExpr << " failed";  \
+      strm << "[error] " << (stop_on_error ? "(required check)" : "") << test_name       \
+           << " File: " __FILE__ << ":" << __LINE__ << " " << sExpr << " failed";        \
       String log = strm.str();                                                           \
       for (const auto &info : list_info) {                                               \
          cfg.trace(config_t::ERROR, "   Failed in context:" + info);                     \
@@ -286,9 +286,8 @@ struct add_test_t {
       using namespace ::DDS_ROOT_NAMESPACE::DDS_TINYTEST_NAMESPACE;                      \
       test_report_cb(check_err);                                                         \
       std::stringstream strm;                                                            \
-      strm << "[error] " << (stop_on_error ? "(required check)" : "")                    \
-           << " File: " __FILE__ << " Line: " << __LINE__                                \
-           << " " #lhs "==" #rhs " (failed)"                                             \
+      strm << "[error] " << (stop_on_error ? "(required check)" : "") << test_name       \
+           << " File: " __FILE__ << ":" << __LINE__ << " " #lhs "==" #rhs " (failed)"    \
            << "[`" << lhs << "` != `" << rhs << "`]";                                    \
       String log = strm.str();                                                           \
       for (const auto &info : list_info) {                                               \
