@@ -91,8 +91,8 @@ TEST_CASE(tricky) {
    /*
     * condition used in execute if complex_t `val` > 5
     */
-   constexpr complex_t<7> complex1;
-   constexpr complex_t<3> complex2;
+   constexpr complex_t<7> complex1{};
+   constexpr complex_t<3> complex2{};
 
    double d = func_return_different_types_depend_on_template(complex1);
    TEST_CHECK_EQUAL(42, d);

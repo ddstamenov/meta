@@ -31,6 +31,11 @@ then
    exit 1
 fi
 
+# using clang-static-analyzer
+if [ -z $CXX ] ; then
+   CXX=$CLANG_CXX
+fi
+
 BUILD_OK=0
 
 for FILE in "${FILES[@]}"
@@ -39,7 +44,7 @@ do
    INPUT_FILE="${OUTPUT}.cpp"
 
    echo "Compile $INPUT_FILE ($CLANG_CXX) ..."
-   CMD="$CLANG_CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $INPUT_FILE $CLANG_ASAN \
+   CMD="$CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $INPUT_FILE $CLANG_ASAN \
       -o $BUILD_DIR/${OUTPUT}_clang"
    echo $CMD
    $CMD
@@ -74,7 +79,7 @@ echo "compile file: $FILES"
 OUTPUT=multy_cpp_bin
 
 echo "Compile $FILES ($CLANG_CXX) ..."
-CMD="$CLANG_CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $FILES $CLANG_ASAN \
+CMD="$CXX -std=c++14 $INCLUDE $BUILD_TYPE_OPT $FILES $CLANG_ASAN \
    -o $BUILD_DIR/${OUTPUT}_clang"
 echo $CMD
 $CMD
